@@ -1,64 +1,73 @@
-#include <string>
 #include <iostream>
-#include <sstream>
 #include <vector>
 #include <unordered_map>
+#include <functional>
+#include <numeric>
 
-using RodPrices = std::vector<unsigned int>;
-using TestCases = std::vector<RodPrices>;
+using price = unsigned int;
+using rod_prices = std::vector<price>;
+using test_cases = std::vector<rod_prices>;
 
-TestCases process_inputs()
+test_cases process_inputs()
 {
   size_t number_of_tests{};
   std::cin >> number_of_tests;
-  TestCases tests{};
+  test_cases tests{};
   for (size_t i{ 0 }; i < number_of_tests; ++i)
   {
     size_t rod_length{};
     std::cin >> rod_length;
-    RodPrices prices{};
+    rod_prices prices{};
     for (size_t j{}; j < rod_length; ++j)
     {
-      unsigned int value{};
+      price value{};
       std::cin >> value;
       prices.push_back(value);
-      std::cout << prices.back() << "\n";
     }
     tests.push_back(prices);
   }
   return tests;
 }
 
-unsigned int rod_cutting(const RodPrices& rod_prices, unsigned int rod_length)
+price rod_cutting(const price rod_length, const rod_prices& prices)
 {
-  std::unordered_map<unsigned int, unsigned int> solved_cases{};
-  solved_cases[1] = rod_prices[0];
-  auto inner_function = [&rod_prices, &solved_cases](unsigned int rod_length)
+  std::unordered_map<price, price> answers{};
+  answers[1] = prices[0]; // base case, rod of length 1
+  std::function<price(const price)> f{ [&f,&prices, &answers](const price rod_length)
   {
-    unsigned int ret_val{0};
-    if (solved_cases.find(rod_length) != solved_cases.cend())
+    price max_price{prices[rod_length - 1]};
+
+    // check if answer exists
+    if (answers.find(rod_length) != answers.cend())
     {
-      ret_val = solved_cases.at(rod_length);
+      max_price = answers.at(rod_length);
     }
-    else
+    else // calculate the maximum price
     {
-      for (size_t digit{ 1 }; digit < (rod_length / 2); ++digit)
+      max_price = prices[rod_length - 1]; // no cut
+      for (size_t digit{ 1 }; digit <= (rod_length / 2); ++digit)
       {
-
+        size_t other = (rod_length) - digit;
+        price price = f(digit) + f(other);
+        if (price > max_price)
+        {
+          max_price = price;
+        }
       }
+      answers[rod_length] = max_price;
     }
-    return ret_val;
-  };
+    return max_price;
+  } };
 
-  return inner_function(rod_length);
+  return f(rod_length);
 }
 
 int main()
 {
-  TestCases tests{ process_inputs() };
+  test_cases tests{ process_inputs() };
   for (const auto& test : tests)
   {
-    std::cout << rod_cutting(test) << "\n";
+    std::cout << rod_cutting(test.size(), test) << "\n";
   }
 
   return 0;
